@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XClock</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@3.1.0/dist/full.css" rel="stylesheet" type="text/css" />
+    <link href="gym.png" rel="icon" type="image/png">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e1e1e;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 24px;
+            color: #bb86fc;
+        }
+        
+        button {
+          padding: 12px 24px;
+          font-size: 1em;
+          cursor: pointer;
+          background-color: #03dac6;
+          color: #000000;
+          border: none;
+          border-radius: 8px;
+          margin: 0 8px;
+          transition: all 0.3s ease;
+          margin-top: 10px;
+          margin-bottom: 10px;
+        }
+        
+        button:hover {
+          background-color: #018786;
+          box-shadow: 0 4px 12px rgba(3, 218, 198, 0.3);
+        }
+        
+        input[type="number"] {
+          width: 80px;
+          padding: 8px;
+          margin-right: 8px;
+          margin-top: 5px;
+          margin-bottom: 5px;
+          border-radius: 4px;
+          border: 1px solid #2a2a2a;
+          text-align: center;
+          color: #ffffff;
+          background-color: #2a2a2a;
+        }
+        #on-time {
+          margin-bottom: 10px;
+        }
+
+        #off-time {
+          margin-top: 10px;
+        }
+        
+        #timerDisplay {
+          font-size: 4em;
+          margin-top: 32px;
+          margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Workout Clock</h1>
+        <div class="on-time">
+            <input type="number" id="onTime" value="30" min="0">
+            <label for="onTime">On Time (seconds)</label>
+        </div>
+        <div class="off-time">
+            <input type="number" id="offTime" value="15" min="0">
+            <label for="offTime">Off Time (seconds)</label>
+        </div>
+        <div>
+            <button id="startPauseButton">Start</button>
+            <button id="resetButton">Reset</button>
+        </div>
+        <div id="timerDisplay">00:00</div>
+        <div id="timerStatus"></div>
+    </div>
+
+    <script>
+        const onTimeInput = document.getElementById('onTime');
+        const offTimeInput = document.getElementById('offTime');
+        const startPauseButton = document.getElementById('startPauseButton');
+        const resetButton = document.getElementById('resetButton');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerStatus = document.getElementById('timerStatus');
+    
+        let onTime = 30;
+        let offTime = 15;
+        let isRunning = false;
+        let timer;
+        let currentTime = 0;
+    
+        let onAudio = new Audio('./ontime.mp3');
+        let offAudio = new Audio('./offtime.mp3');
+    
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+    
+        function updateTimerDisplay() {
+            timerDisplay.textContent = formatTime(currentTime);
+        }
+    
+        function updateTimerStatus(status) {
+            timerStatus.textContent = status;
+        }
+        
+        function startTimer() {
+            isRunning = true;
+            startPauseButton.textContent = 'Pause';
+            timer = setInterval(function() {
+                currentTime--;
+                if (currentTime < 0) {
+                    if (timerStatus.textContent === "On") {
+                        offAudio.play();
+                        currentTime = offTime;
+                        updateTimerStatus("Off");
+                    } else {
+                        onAudio.play();
+                        currentTime = onTime;
+                        updateTimerStatus("On");
+                    }
+                }
+    
+                updateTimerDisplay();
+            }, 1000);
+        }
+    
+        function pauseTimer() {
+            isRunning = false;
+            startPauseButton.textContent = 'Resume';
+            clearInterval(timer);
+        }
+        
+        function resetTimer() {
+            isRunning = false;
+            startPauseButton.textContent = 'Start';
+            clearInterval(timer);
+            currentTime = onTime;
+            updateTimerDisplay();
+            updateTimerStatus("On");
+        }
+    
+        startPauseButton.addEventListener('click', function() {
+            if (isRunning) {
+                pauseTimer();
+            } else {
+                onTime = parseInt(onTimeInput.value, 10) || onTime;
+                offTime = parseInt(offTimeInput.value, 10) || offTime;
+                currentTime = onTime;
+                updateTimerDisplay();
+                startTimer();
+                updateTimerStatus("On");
+            }
+        });
+        
+        resetButton.addEventListener('click', resetTimer);
+        
+        onTimeInput.addEventListener('input', () => {
+            onTime = parseInt(onTimeInput.value, 10);
+        });
+    
+        offTimeInput.addEventListener('input', () => {
+            offTime = parseInt(offTimeInput.value, 10);
+        });
+    
+        resetTimer();
+    </script>    
+</body>
+</html>
