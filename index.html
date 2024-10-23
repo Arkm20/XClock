@@ -17,6 +17,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            transition: background-color 0.3s ease;
         }
         .container {
             background-color: #1e1e1e;
@@ -25,6 +26,7 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             width: 400px;
             text-align: center;
+            transition: background-color 0.3s ease;
         }
 
         h1 {
@@ -78,6 +80,12 @@
           margin-top: 32px;
           margin-bottom: 16px;
         }
+
+        #stopwatchDisplay {
+          font-size: 2em;
+          margin-top: 16px;
+          color: #ffb74d;
+        }
     </style>
 </head>
 <body>
@@ -97,6 +105,7 @@
         </div>
         <div id="timerDisplay">00:00</div>
         <div id="timerStatus"></div>
+        <div id="stopwatchDisplay">Stopwatch: 00:00</div>
     </div>
 
     <script>
@@ -106,13 +115,16 @@
         const resetButton = document.getElementById('resetButton');
         const timerDisplay = document.getElementById('timerDisplay');
         const timerStatus = document.getElementById('timerStatus');
+        const stopwatchDisplay = document.getElementById('stopwatchDisplay');
     
         let onTime = 30;
         let offTime = 15;
         let isRunning = false;
         let timer;
         let currentTime = 0;
-    
+        let stopwatchTime = 0;
+        let stopwatchTimer;
+
         let onAudio = new Audio('./ontime.mp3');
         let offAudio = new Audio('./offtime.mp3');
     
@@ -124,6 +136,10 @@
     
         function updateTimerDisplay() {
             timerDisplay.textContent = formatTime(currentTime);
+        }
+
+        function updateStopwatchDisplay() {
+            stopwatchDisplay.textContent = `Stopwatch: ${formatTime(stopwatchTime)}`;
         }
     
         function updateTimerStatus(status) {
@@ -138,10 +154,14 @@
                 if (currentTime < 0) {
                     if (timerStatus.textContent === "On") {
                         offAudio.play();
+                        document.body.style.backgroundColor = '#121212'; // Reset background
+                        document.querySelector('.container').style.backgroundColor = '#1e1e1e'; // Reset container
                         currentTime = offTime;
                         updateTimerStatus("Off");
                     } else {
                         onAudio.play();
+                        document.body.style.backgroundColor = '#03dac6'; // Green background for "On" time
+                        document.querySelector('.container').style.backgroundColor = '#66ffcc'; // Lighter green container
                         currentTime = onTime;
                         updateTimerStatus("On");
                     }
@@ -155,6 +175,7 @@
             isRunning = false;
             startPauseButton.textContent = 'Resume';
             clearInterval(timer);
+            clearInterval(stopwatchTimer);
         }
         
         function resetTimer() {
@@ -164,8 +185,24 @@
             currentTime = onTime;
             updateTimerDisplay();
             updateTimerStatus("On");
+            document.body.style.backgroundColor = '#121212'; // Reset background color
+            document.querySelector('.container').style.backgroundColor = '#1e1e1e'; // Reset container color
+            resetStopwatch();
         }
-    
+
+        function startStopwatch() {
+            stopwatchTimer = setInterval(() => {
+                stopwatchTime++;
+                updateStopwatchDisplay();
+            }, 1000);
+        }
+
+        function resetStopwatch() {
+            stopwatchTime = 0;
+            updateStopwatchDisplay();
+            clearInterval(stopwatchTimer);
+        }
+
         startPauseButton.addEventListener('click', function() {
             if (isRunning) {
                 pauseTimer();
@@ -176,6 +213,7 @@
                 updateTimerDisplay();
                 startTimer();
                 updateTimerStatus("On");
+                startStopwatch(); // Start the stopwatch
             }
         });
         
