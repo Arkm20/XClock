@@ -221,10 +221,12 @@
         
         onTimeInput.addEventListener('input', () => {
             onTime = parseInt(onTimeInput.value, 10);
+            onTime -= 1;
         });
     
         offTimeInput.addEventListener('input', () => {
             offTime = parseInt(offTimeInput.value, 10);
+            onTime -= 1;
         });
     
         resetTimer();
