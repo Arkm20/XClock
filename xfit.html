@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>Xfit Workout</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel=“icon” href=“gym.png”>
+    <style>
+        /* --- Global Styles & Variables --- */
+        :root {
+            --bg-color: #121212;
+            --primary-text: #e0e0e0;
+            --secondary-text: #b0b0b0;
+            --accent-color: #00aaff;
+            --accent-glow: rgba(0, 170, 255, 0.3);
+            --glass-bg: rgba(30, 30, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success-color: #28a745;
+            --font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            font-family: var(--font-family);
+        }
+
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        main {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 1.5rem 1rem 6rem 1rem; /* Padding at bottom for tab bar */
+        }
+        
+        /* --- Glassmorphism & UI Elements --- */
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 25px var(--accent-glow);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: var(--primary-text);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* --- Intro Overlay --- */
+        #intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            text-align: center;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .intro-slide {
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .intro-slide.active { display: flex; }
+        .intro-slide h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        .intro-slide p { font-size: 1.1rem; color: var(--secondary-text); margin-bottom: 2rem; }
+        .intro-slide .logo { width: 100px; height: 100px; margin-bottom: 1.5rem; }
+        
+        #profile-pic-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+            margin-bottom: 1rem;
+            object-fit: cover;
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .file-upload-label {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            border-radius: 20px;
+            cursor: pointer;
+            margin-bottom: 1.5rem;
+        }
+        
+        #profilePicInput { display: none; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Tab Bar --- */
+        #tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65px;
+            background: var(--glass-bg);
+            border-top: 1px solid var(--glass-border);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .tab-item {
+            background: none;
+            border: none;
+            color: var(--secondary-text);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            height: 100%;
+            transition: color 0.3s ease;
+        }
+
+        .tab-item svg {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            transition: transform 0.3s ease;
+        }
+
+        .tab-item.active {
+            color: var(--accent-color);
+        }
+        
+        .tab-item.active svg {
+            transform: scale(1.1);
+        }
+
+        /* --- App Views --- */
+        .view {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Home View */
+        #home-view h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        #home-view p {
+            color: var(--secondary-text);
+            margin-bottom: 1.5rem;
+        }
+
+        #week-scroller {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        #week-scroller::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
+
+        .day-item {
+            flex: 0 0 70px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 12px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        
+        .day-item.active {
+            background: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            border-color: var(--accent-color);
+        }
+
+        .day-item.today {
+            border-color: var(--accent-color);
+        }
+        
+        .day-name { font-size: 0.8rem; }
+        .day-date { font-size: 1.2rem; font-weight: bold; }
+
+        #exercise-list {
+            list-style: none;
+        }
+        
+        .exercise-item {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 0;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .exercise-item:last-child { border-bottom: none; }
+        
+        .custom-checkbox {
+            position: relative;
+            width: 24px;
+            height: 24px;
+            min-width: 24px;
+            border: 2px solid var(--secondary-text);
+            border-radius: 50%;
+            cursor: pointer;
+            margin-right: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .exercise-item input[type="checkbox"] {
+            display: none;
+        }
+
+        .exercise-item input[type="checkbox"]:checked + .custom-checkbox {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .exercise-item input[type="checkbox"]:checked + .custom-checkbox::after {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 3px;
+            width: 5px;
+            height: 10px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        
+        .exercise-item label {
+            flex-grow: 1;
+            font-size: 1.1rem;
+            transition: color 0.3s ease, text-decoration 0.3s ease;
+        }
+        
+        .exercise-item input[type="checkbox"]:checked ~ label {
+            color: var(--secondary-text);
+            text-decoration: line-through;
+        }
+
+        #no-workout-msg {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--secondary-text);
+        }
+        #no-workout-msg svg {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+
+        /* Plans View */
+        #plans-list .glass-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        #plans-list .glass-card.active-plan {
+            border-left: 5px solid var(--accent-color);
+        }
+        #plans-list h3 { margin: 0; }
+
+        /* Profile View */
+        #profile-view .glass-card {
+            text-align: center;
+        }
+        #profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+            margin-bottom: 1rem;
+            object-fit: cover;
+        }
+        #profile-name {
+            font-size: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        /* --- Modals / Popups --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 500;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal-overlay.active { display: flex; }
+        
+        #congrats-popup {
+            text-align: center;
+        }
+        #congrats-popup h2 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+        
+        #plan-creator-modal .modal-content {
+            width: 100%;
+            max-width: 500px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+        #plan-creator-modal .modal-header {
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        #plan-creator-modal .modal-body {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        #plan-creator-modal .modal-footer {
+            padding-top: 1rem;
+            border-top: 1px solid var(--glass-border);
+            margin-top: 1rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .plan-creator-step { display: none; }
+        .plan-creator-step.active { display: block; }
+        
+        .day-type-assignment {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .day-type-assignment select {
+            background: rgba(0,0,0,0.3);
+            color: var(--primary-text);
+            border: 1px solid var(--glass-border);
+            padding: 8px;
+            border-radius: 8px;
+        }
+        
+        .exercise-selection-group h4 {
+            color: var(--accent-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            border-bottom: 1px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+        }
+        .exercise-checkbox-label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- App Container -->
+    <div id="app-container">
+
+        <!-- Main Content (hidden until intro is complete) -->
+        <div id="main-app" class="hidden">
+            <main id="main-content">
+                <!-- Home View -->
+                <section id="home-view" class="view active">
+                    <h1 id="greeting">Hello, User</h1>
+                    <p>Here's your plan for today.</p>
+
+                    <div id="week-scroller"></div>
+                    
+                    <div id="today-workout" class="glass-card">
+                        <h2 id="workout-day-title">Today's Workout</h2>
+                        <ul id="exercise-list"></ul>
+                        <div id="no-workout-msg" class="hidden">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M14.829 14.829a1.998 1.998 0 0 1-2.828 0L9.172 12a2 2 0 1 1 2.828-2.828l-1.414 1.414 2.829 2.829z"></path><path d="m16.243 11.998-2.829-2.829-1.414 1.414a2 2 0 1 1-2.828-2.828l2.828-2.828a2 2 0 1 1 2.828 2.828l-1.414 1.414 2.829 2.829a1.998 1.998 0 0 1 0 2.828z"></path></svg>
+                            <p>Rest day! Enjoy your break.</p>
+                            <button class="btn" onclick="document.querySelector('#plans-tab').click()">Create a Plan</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Plans View -->
+                <section id="plans-view" class="view">
+                    <h1>Workout Plans</h1>
+                    <p>Select a plan or create a new one.</p>
+                    <div id="plans-list"></div>
+                    <button id="create-plan-btn" class="btn" style="width: 100%; margin-top: 1rem;">Create New Plan</button>
+                </section>
+
+                <!-- Profile View -->
+                <section id="profile-view" class="view">
+                     <h1>Profile</h1>
+                     <div class="glass-card">
+                         <img id="profile-pic" src="images/logo.png" alt="Profile Picture">
+                         <h2 id="profile-name">User Name</h2>
+                         <button id="reset-app-btn" class="btn btn-secondary">Reset App Data</button>
+                     </div>
+                </section>
+            </main>
+
+            <!-- Tab Bar -->
+            <nav id="tab-bar">
+                <button class="tab-item active" id="home-tab" data-view="home-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                </button>
+                <button class="tab-item" id="plans-tab" data-view="plans-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                </button>
+                <button class="tab-item" id="profile-tab" data-view="profile-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Popups and Modals (initially hidden) -->
+        <div id="congrats-modal" class="modal-overlay">
+            <div id="congrats-popup" class="glass-card">
+                 <img src="images/logo.png" alt="Congrats" style="width: 80px; height: 80px; margin-bottom: 1rem;">
+                 <h2>Workout Complete!</h2>
+                 <p>Amazing job! You've crushed today's session.</p>
+                 <button class="btn" onclick="document.getElementById('congrats-modal').classList.remove('active')">Awesome!</button>
+            </div>
+        </div>
+
+        <div id="plan-creator-modal" class="modal-overlay">
+            <div class="glass-card modal-content">
+                <div class="modal-header">
+                    <h2 id="plan-creator-title">Create New Plan</h2>
+                </div>
+                <div class="modal-body">
+                    <!-- Step 1: Name & Day Types -->
+                    <div id="plan-creator-step1" class="plan-creator-step active">
+                        <input type="text" id="plan-name-input" class="input-field" placeholder="Plan Name (e.g., 'Strength Focus')">
+                        <h4>Assign workout types to days:</h4>
+                        <div id="day-type-assignments"></div>
+                    </div>
+                    <!-- Step 2: Select Exercises -->
+                    <div id="plan-creator-step2" class="plan-creator-step">
+                        <h4>Select exercises for each workout type:</h4>
+                        <div id="exercise-selection-container"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="plan-creator-back-btn" class="btn btn-secondary hidden">Back</button>
+                    <button id="plan-creator-next-btn" class="btn">Next</button>
+                    <button id="plan-creator-save-btn" class="btn hidden">Save Plan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Intro Sequence -->
+    <div id="intro-overlay">
+        <!-- Slide 1: Welcome -->
+        <div class="intro-slide active" id="intro-slide-1">
+            <img src="images/logo.png" alt="Logo" class="logo">
+            <h1>Welcome to Xfit</h1>
+            <p>Your sleek, modern guide to a healthier you. Let's get started.</p>
+            <button class="btn" onclick="nextIntroSlide()">Next</button>
+        </div>
+        <!-- Slide 2: Track Progress -->
+        <div class="intro-slide" id="intro-slide-2">
+            <h2>Track Your Progress</h2>
+            <p>Create custom workout plans, check off exercises, and stay consistent.</p>
+            <button class="btn" onclick="nextIntroSlide()">Next</button>
+        </div>
+        <!-- Slide 3: Your Data -->
+        <div class="intro-slide" id="intro-slide-3">
+            <h2>Private & Secure</h2>
+            <p>All your workout data is stored securely on your device, not in the cloud.</p>
+            <button class="btn" onclick="nextIntroSlide()">Create Profile</button>
+        </div>
+        <!-- Slide 4: Profile Creation -->
+        <div class="intro-slide" id="intro-slide-4">
+            <h2>Create Your Profile</h2>
+            <form id="profile-form" onsubmit="completeIntro(event)">
+                <img id="profile-pic-preview" src="images/logo.png" alt="Profile Picture Preview">
+                <label for="profilePicInput" class="file-upload-label">Upload Picture</label>
+                <input type="file" id="profilePicInput" accept="image/*">
+                <input type="text" id="username" class="input-field" placeholder="Enter Your Name" required>
+                <button type="submit" class="btn">Start Workout</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- STATE MANAGEMENT & DATA ---
+            const DB_NAME = 'XfitDB';
+            let state = {
+                user: null,
+                plans: [],
+                activePlanIndex: 0,
+                progress: {}, // { 'YYYY-MM-DD': ['exercise1', 'exercise2'] }
+                currentDayOffset: 0, // 0 is today, 1 is tomorrow etc.
+            };
+
+            const EXERCISE_DATABASE = {
+                "Upper Body": ["Push-ups", "Pull-ups", "Bench Press", "Overhead Press", "Dumbbell Rows", "Bicep Curls", "Tricep Dips"],
+                "Lower Body": ["Squats", "Lunges", "Deadlifts", "Leg Press", "Calf Raises", "Glute Bridges"],
+                "Core": ["Plank", "Crunches", "Leg Raises", "Russian Twists", "Bird Dog"],
+                "Cardio": ["Running", "Cycling", "Jumping Jacks", "Burpees", "Stair Climbing"],
+                "Full Body": ["Burpees", "Squat to Press", "Kettlebell Swings", "Thrusters"],
+            };
+            const WORKOUT_TYPES = ["Rest", ...Object.keys(EXERCISE_DATABASE)];
+            const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+            // --- DOM ELEMENT REFERENCES ---
+            const mainApp = document.getElementById('main-app');
+            const introOverlay = document.getElementById('intro-overlay');
+            const tabBar = document.getElementById('tab-bar');
+            const views = document.querySelectorAll('.view');
+            
+            // Home View
+            const greetingEl = document.getElementById('greeting');
+            const weekScroller = document.getElementById('week-scroller');
+            const workoutDayTitle = document.getElementById('workout-day-title');
+            const exerciseList = document.getElementById('exercise-list');
+            const noWorkoutMsg = document.getElementById('no-workout-msg');
+            
+            // Plans View
+            const plansList = document.getElementById('plans-list');
+            const createPlanBtn = document.getElementById('create-plan-btn');
+
+            // Profile View
+            const profilePic = document.getElementById('profile-pic');
+            const profileName = document.getElementById('profile-name');
+            const resetAppBtn = document.getElementById('reset-app-btn');
+
+            // Modals
+            const congratsModal = document.getElementById('congrats-modal');
+            const planCreatorModal = document.getElementById('plan-creator-modal');
+            const planCreatorStep1 = document.getElementById('plan-creator-step1');
+            const planCreatorStep2 = document.getElementById('plan-creator-step2');
+            const planCreatorBackBtn = document.getElementById('plan-creator-back-btn');
+            const planCreatorNextBtn = document.getElementById('plan-creator-next-btn');
+            const planCreatorSaveBtn = document.getElementById('plan-creator-save-btn');
+            
+            // --- INITIALIZATION ---
+            function init() {
+                loadState();
+                if (!state.user) {
+                    mainApp.classList.add('hidden');
+                    introOverlay.style.opacity = '1';
+                } else {
+                    introOverlay.classList.add('hidden');
+                    mainApp.classList.remove('hidden');
+                    setupApp();
+                }
+                addEventListeners();
+            }
+
+            function setupApp() {
+                renderAll();
+            }
+
+            // --- STATE PERSISTENCE ---
+            function saveState() {
+                try {
+                    localStorage.setItem(DB_NAME, JSON.stringify(state));
+                } catch (e) {
+                    console.error("Error saving state to localStorage", e);
+                }
+            }
+
+            function loadState() {
+                const storedState = localStorage.getItem(DB_NAME);
+                if (storedState) {
+                    state = JSON.parse(storedState);
+                }
+            }
+
+            // --- INTRO SEQUENCE LOGIC ---
+            let currentIntroSlide = 1;
+            window.nextIntroSlide = function() {
+                document.getElementById(`intro-slide-${currentIntroSlide}`).classList.remove('active');
+                currentIntroSlide++;
+                document.getElementById(`intro-slide-${currentIntroSlide}`).classList.add('active');
+            }
+
+            const profilePicInput = document.getElementById('profilePicInput');
+            const profilePicPreview = document.getElementById('profile-pic-preview');
+            profilePicInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        profilePicPreview.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            window.completeIntro = function(event) {
+                event.preventDefault();
+                const username = document.getElementById('username').value;
+                state.user = {
+                    name: username,
+                    profilePic: profilePicPreview.src
+                };
+                
+                introOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    introOverlay.classList.add('hidden');
+                    mainApp.classList.remove('hidden');
+                    setupApp();
+                }, 500);
+            }
+
+            // --- RENDERING FUNCTIONS ---
+            function renderAll() {
+                renderProfile();
+                renderPlans();
+                renderHome(); // Must be last as it depends on other state
+                saveState();
+            }
+
+            function renderHome() {
+                renderWeekScroller();
+                renderTodaysWorkout();
+                greetingEl.textContent = `Hello, ${state.user.name.split(' ')[0]}`;
+            }
+            
+            function renderWeekScroller() {
+                weekScroller.innerHTML = '';
+                const today = new Date();
+                today.setDate(today.getDate() - 3); // Start 3 days ago for context
+
+                for (let i = 0; i < 14; i++) { // Render 2 weeks
+                    const day = new Date(today);
+                    day.setDate(day.getDate() + i);
+                    
+                    const offset = Math.floor((day.setHours(0,0,0,0) - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+
+                    const dayItem = document.createElement('div');
+                    dayItem.className = 'day-item';
+                    if (offset === 0) dayItem.classList.add('today');
+                    if (offset === state.currentDayOffset) dayItem.classList.add('active');
+                    
+                    dayItem.dataset.offset = offset;
+                    dayItem.innerHTML = `
+                        <div class="day-name">${DAYS_OF_WEEK[day.getDay()].slice(0, 3)}</div>
+                        <div class="day-date">${day.getDate()}</div>
+                    `;
+                    dayItem.addEventListener('click', () => {
+                        state.currentDayOffset = offset;
+                        renderHome();
+                    });
+                    weekScroller.appendChild(dayItem);
+                }
+
+                const activeDay = weekScroller.querySelector('.day-item.active');
+                if (activeDay) {
+                    activeDay.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }
+
+            function renderTodaysWorkout() {
+                const targetDate = new Date();
+                targetDate.setDate(targetDate.getDate() + state.currentDayOffset);
+                const dayName = DAYS_OF_WEEK[targetDate.getDay()];
+                const dateKey = targetDate.toISOString().split('T')[0];
+
+                const activePlan = state.plans[state.activePlanIndex];
+
+                if (!activePlan || !activePlan.days[dayName]) {
+                    showNoWorkoutMessage("No plan selected for today.");
+                    return;
+                }
+
+                const workout = activePlan.days[dayName];
+                workoutDayTitle.textContent = `${dayName}: ${workout.type}`;
+
+                if (workout.type === 'Rest' || !workout.exercises || workout.exercises.length === 0) {
+                    showNoWorkoutMessage(workout.type === 'Rest' ? "Rest day! Enjoy your break." : "No exercises assigned for today.");
+                    return;
+                }
+                
+                noWorkoutMsg.classList.add('hidden');
+                exerciseList.innerHTML = '';
+                
+                workout.exercises.forEach(exercise => {
+                    const li = document.createElement('li');
+                    li.className = 'exercise-item';
+                    
+                    const isChecked = state.progress[dateKey]?.includes(exercise);
+
+                    li.innerHTML = `
+                        <input type="checkbox" id="ex-${exercise.replace(/\s+/g, '-')}" ${isChecked ? 'checked' : ''}>
+                        <label for="ex-${exercise.replace(/\s+/g, '-')}" class="custom-checkbox"></label>
+                        <label for="ex-${exercise.replace(/\s+/g, '-')}" class="exercise-text">${exercise}</label>
+                    `;
+                    
+                    li.querySelector('input').addEventListener('change', (e) => handleExerciseCheck(e, exercise, dateKey));
+                    exerciseList.appendChild(li);
+                });
+            }
+
+            function showNoWorkoutMessage(message) {
+                noWorkoutMsg.classList.remove('hidden');
+                noWorkoutMsg.querySelector('p').textContent = message;
+                exerciseList.innerHTML = '';
+                workoutDayTitle.textContent = "Today's Plan";
+                if (state.plans.length === 0) {
+                    noWorkoutMsg.querySelector('button').classList.remove('hidden');
+                } else {
+                    noWorkoutMsg.querySelector('button').classList.add('hidden');
+                }
+            }
+
+            function renderPlans() {
+                plansList.innerHTML = '';
+                if(state.plans.length === 0) {
+                    plansList.innerHTML = '<p style="text-align:center; color: var(--secondary-text);">No plans yet. Create one!</p>';
+                    return;
+                }
+                state.plans.forEach((plan, index) => {
+                    const planCard = document.createElement('div');
+                    planCard.className = 'glass-card';
+                    if (index === state.activePlanIndex) {
+                        planCard.classList.add('active-plan');
+                    }
+                    planCard.innerHTML = `<h3>${plan.name}</h3> <button class="btn btn-secondary">Select</button>`;
+                    planCard.addEventListener('click', () => {
+                        state.activePlanIndex = index;
+                        renderAll();
+                    });
+                    plansList.appendChild(planCard);
+                });
+            }
+
+            function renderProfile() {
+                profilePic.src = state.user.profilePic;
+                profileName.textContent = state.user.name;
+            }
+
+            // --- EVENT HANDLERS ---
+            function addEventListeners() {
+                tabBar.addEventListener('click', (e) => {
+                    const tabItem = e.target.closest('.tab-item');
+                    if (tabItem) {
+                        switchView(tabItem.dataset.view);
+                        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+                        tabItem.classList.add('active');
+                    }
+                });
+
+                createPlanBtn.addEventListener('click', openPlanCreator);
+                resetAppBtn.addEventListener('click', () => {
+                    if (confirm("Are you sure you want to reset all app data? This cannot be undone.")) {
+                        localStorage.removeItem(DB_NAME);
+                        window.location.reload();
+                    }
+                });
+            }
+
+            function switchView(viewId) {
+                views.forEach(view => view.classList.remove('active'));
+                document.getElementById(viewId).classList.add('active');
+            }
+            
+            function handleExerciseCheck(event, exerciseName, dateKey) {
+                if (!state.progress[dateKey]) {
+                    state.progress[dateKey] = [];
+                }
+                
+                if (event.target.checked) {
+                    if (!state.progress[dateKey].includes(exerciseName)) {
+                        state.progress[dateKey].push(exerciseName);
+                    }
+                } else {
+                    state.progress[dateKey] = state.progress[dateKey].filter(ex => ex !== exerciseName);
+                }
+
+                saveState();
+                checkAllExercisesDone(dateKey);
+            }
+
+            function checkAllExercisesDone(dateKey) {
+                const activePlan = state.plans[state.activePlanIndex];
+                if (!activePlan) return;
+
+                const targetDate = new Date(dateKey + "T12:00:00Z");
+                const dayName = DAYS_OF_WEEK[targetDate.getUTCDay()];
+
+                const todaysPlan = activePlan.days[dayName];
+                const totalExercises = todaysPlan?.exercises?.length || 0;
+                const completedExercises = state.progress[dateKey]?.length || 0;
+
+                if (totalExercises > 0 && totalExercises === completedExercises) {
+                    congratsModal.classList.add('active');
+                }
+            }
+            
+            // --- PLAN CREATOR LOGIC ---
+            let currentPlanData = {};
+
+            function openPlanCreator() {
+                planCreatorModal.classList.add('active');
+                resetPlanCreator();
+                renderPlanCreatorStep1();
+            }
+
+            function resetPlanCreator() {
+                currentPlanData = { name: '', days: {} };
+                document.getElementById('plan-name-input').value = '';
+                planCreatorStep1.classList.add('active');
+                planCreatorStep2.classList.remove('active');
+                planCreatorBackBtn.classList.add('hidden');
+                planCreatorNextBtn.classList.remove('hidden');
+                planCreatorSaveBtn.classList.add('hidden');
+            }
+            
+            function renderPlanCreatorStep1() {
+                const container = document.getElementById('day-type-assignments');
+                container.innerHTML = '';
+                DAYS_OF_WEEK.forEach(day => {
+                    const div = document.createElement('div');
+                    div.className = 'day-type-assignment';
+                    div.innerHTML = `
+                        <span>${day}</span>
+                        <select data-day="${day}">
+                            ${WORKOUT_TYPES.map(type => `<option value="${type}">${type}</option>`).join('')}
+                        </select>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+
+            planCreatorNextBtn.addEventListener('click', () => {
+                // Collect data from step 1
+                const planName = document.getElementById('plan-name-input').value.trim();
+                if (!planName) {
+                    alert('Please enter a name for your plan.');
+                    return;
+                }
+                currentPlanData.name = planName;
+                
+                document.querySelectorAll('#day-type-assignments select').forEach(select => {
+                    currentPlanData.days[select.dataset.day] = { type: select.value, exercises: [] };
+                });
+
+                // Move to step 2
+                renderPlanCreatorStep2();
+                planCreatorStep1.classList.remove('active');
+                planCreatorStep2.classList.add('active');
+                planCreatorBackBtn.classList.remove('hidden');
+                planCreatorNextBtn.classList.add('hidden');
+                planCreatorSaveBtn.classList.remove('hidden');
+            });
+            
+            planCreatorBackBtn.addEventListener('click', () => {
+                planCreatorStep1.classList.add('active');
+                planCreatorStep2.classList.remove('active');
+                planCreatorBackBtn.classList.add('hidden');
+                planCreatorNextBtn.classList.remove('hidden');
+                planCreatorSaveBtn.classList.add('hidden');
+            });
+
+            function renderPlanCreatorStep2() {
+                const container = document.getElementById('exercise-selection-container');
+                container.innerHTML = '';
+                const typesInPlan = new Set(Object.values(currentPlanData.days).map(d => d.type));
+
+                for (const type of typesInPlan) {
+                    if (type !== 'Rest') {
+                        const groupDiv = document.createElement('div');
+                        groupDiv.className = 'exercise-selection-group';
+                        
+                        let checkboxesHTML = '';
+                        EXERCISE_DATABASE[type].forEach(ex => {
+                            checkboxesHTML += `
+                                <label class="exercise-checkbox-label">
+                                    <input type="checkbox" data-type="${type}" value="${ex}"> ${ex}
+                                </label>
+                            `;
+                        });
+                        
+                        groupDiv.innerHTML = `<h4>${type}</h4> ${checkboxesHTML}`;
+                        container.appendChild(groupDiv);
+                    }
+                }
+            }
+
+            planCreatorSaveBtn.addEventListener('click', () => {
+                // Collect exercises from step 2
+                document.querySelectorAll('#exercise-selection-container input[type="checkbox"]:checked').forEach(cb => {
+                    const type = cb.dataset.type;
+                    const exercise = cb.value;
+                    
+                    // Add this exercise to every day that has this type
+                    for (const day in currentPlanData.days) {
+                        if (currentPlanData.days[day].type === type) {
+                            currentPlanData.days[day].exercises.push(exercise);
+                        }
+                    }
+                });
+
+                state.plans.push(currentPlanData);
+                state.activePlanIndex = state.plans.length - 1;
+                planCreatorModal.classList.remove('active');
+                renderAll();
+            });
+
+            // --- START THE APP ---
+            init();
+
+        });
+
+    </script>
+</body>
+</html>
