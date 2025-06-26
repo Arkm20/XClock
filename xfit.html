@@ -97,14 +97,14 @@
         "10 Reverse Crunches"
       ],
       Tuesday:   ["Rest / Light Cardio / Stretch"],
-      Wednesday: [], // we’ll fill after definition
-      Thursday:  ["Core Focus (repeat only Core & Finisher 3×)"],
+      Thursday: [], // we’ll fill after definition
+      Wednesday:  ["Core Focus (repeat only Core & Finisher 3×)"],
       Friday:    ["Full Body Routine ×2 + Burnout Finisher"],
       Saturday:  ["Rest / Mobility"],
       Sunday:    ["Optional Light Round or Active Rest"]
     };
     // Since Wednesday is same as Monday but 4 rounds, we'll label accordingly
-    routines.Wednesday = routines.Monday.map(item => item + " (Round 4)");
+    routines.Thursday = routines.Monday.map(item => item + " (Round 4)");
 
     // Determine today
     const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
