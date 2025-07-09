@@ -2,143 +2,169 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Daily Bodyweight Workout</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Planche Progression Tracker</title>
   <style>
-    /* ======= Global Reset ======= */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      min-height: 100vh;
-      font-family: 'Segoe UI', sans-serif;
-      background: url('https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D') no-repeat center/cover;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #eee;
+    /* --- Reset & Fonts --- */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { 
+      font-family: 'Segoe UI', sans-serif; 
+      background: #121212; color: #e0e0e0; 
+      display:flex; flex-direction:column; height:100vh;
     }
 
-    /* ======= Glassy Container ======= */
-    .container {
-      backdrop-filter: blur(12px);
-      background: rgba(30, 30, 30, 0.5);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 2rem;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    /* --- Calendar Strip --- */
+    #calendar {
+      display:flex; overflow-x:auto; padding:1rem;
+      background: #1e1e1e; scroll-snap-type: x mandatory;
     }
+    #calendar .day {
+      flex:0 0 4rem; text-align:center; padding:.5rem;
+      margin-right:1rem; border-radius:.5rem;
+      background: #2a2a2a; cursor:pointer;
+      scroll-snap-align: center;
+      transition: background .2s;
+    }
+    #calendar .day.selected {
+      background: #66a2de;
+      color: #121212;
+    }
+    #calendar .day span { display:block; }
+    #calendar .day .weekday { font-weight:600; }
+    #calendar .day .date    { font-size:.8rem; opacity:.75; }
 
-    h1 {
-      font-size: 1.5rem;
-      text-align: center;
-      margin-bottom: 1rem;
+    /* --- Checklist --- */
+    #tasks {
+      flex:1; overflow-y:auto; padding:1rem;
     }
-
-    .day-label {
-      text-align: center;
-      font-size: 1rem;
-      margin-bottom: 1.5rem;
-      color: #ccc;
+    #tasks ul { list-style:none; }
+    #tasks li {
+      display:flex; align-items:center;
+      padding:.75rem; margin-bottom:.5rem;
+      background: #1e1e1e; border-radius:.5rem;
+      transition: opacity .2s;
     }
-
-    ul.checklist {
-      list-style: none;
-    }
-    ul.checklist li {
-      display: flex;
-      align-items: center;
-      margin-bottom: 0.75rem;
-    }
-    ul.checklist li input[type="checkbox"] {
-      transform: scale(1.2);
-      margin-right: 0.75rem;
-      accent-color: #66a2de;
-    }
-    ul.checklist li label {
-      flex: 1;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .footer {
-      text-align: center;
-      margin-top: 1.5rem;
-      font-size: 0.85rem;
-      color: #888;
+    #tasks li.done { opacity:.5; }
+    #tasks input[type=checkbox] {
+      margin-right:.75rem; transform:scale(1.2);
+      accent-color:#66a2de;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🏋️‍♂️ Today’s Workout</h1>
-    <div class="day-label" id="dayLabel"></div>
-    <ul class="checklist" id="checklist"></ul>
-    <div class="footer">Your progress is saved automatically.</div>
+
+  <!-- Calendar Strip -->
+  <div id="calendar"></div>
+
+  <!-- Today's Tasks -->
+  <div id="tasks">
+    <h2 id="header">Exercises</h2>
+    <ul id="taskList"></ul>
   </div>
 
   <script>
-    // Define the weekly routine
-    const routines = {
-      Monday: [
-        "20 Bodyweight Squats",
-        "12 Jump Squats",
-        "10 Bulgarian Split Squats (each leg)",
-        "20 Glute Bridges",
-        "15 Push-ups",
-        "10 Pike Push-ups",
-        "10 Triceps Dips",
-        "10 Superman Pulls",
-        "20 Sit-ups",
-        "15 Leg Raises",
-        "10 V-Ups",
-        "30 Russian Twists",
-        "10 Reverse Crunches"
-      ],
-      Tuesday:   ["Rest / Light Cardio / Stretch"],
-      Thursday: [], // we’ll fill after definition
-      Wednesday:  ["Core Focus (repeat only Core & Finisher 3×)"],
-      Friday:    ["Full Body Routine ×2 + Burnout Finisher"],
-      Saturday:  ["Rest / Mobility"],
-      Sunday:    ["Optional Light Round or Active Rest"]
+  // --- 1. The Weekly Exercise Data ---
+  const schedule = {
+    Sunday:    ['Rest Day – Active Recovery'],
+    Monday:    ['Wrist conditioning', 'Scapular push-ups', 'Hollow body hold'],
+    Tuesday:   ['Tuck Planche hold (3×15–30s)'],
+    Wednesday: ['Advanced Tuck Planche (3×10–20s)'],
+    Thursday:  ['Straddle-Tuck Planche (3×10–20s)'],
+    Friday:    ['Straddle Planche hold (3×5–15s)'],
+    Saturday:  ['Planche Leans', 'Pseudo-Planche Push-ups (3×8–12)']
+  };
+
+  // --- 2. Helpers for Dates & Storage ---
+  function formatDay(date) {
+    return {
+      weekday: date.toLocaleDateString('en-US',{ weekday:'short' }),
+      date:    date.getMonth()+1 + '/' + date.getDate(),
+      key:     date.toISOString().slice(0,10)
     };
-    // Since Wednesday is same as Monday but 4 rounds, we'll label accordingly
-    routines.Thursday = routines.Monday.map(item => item + " (Round 4)");
+  }
 
-    // Determine today
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    document.getElementById('dayLabel').textContent = today;
+  function loadProgress(dayKey) {
+    let saved = localStorage.getItem('planche-'+dayKey);
+    return saved ? JSON.parse(saved) : [];
+  }
+  function saveProgress(dayKey, doneList) {
+    localStorage.setItem('planche-'+dayKey, JSON.stringify(doneList));
+  }
 
-    // Load or initialize checklist state
-    const storageKey = `workout-${today}`;
-    let state = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-    // Render checklist
-    const listEl = document.getElementById('checklist');
-    routines[today]?.forEach((task, idx) => {
-      const li = document.createElement('li');
-      const chk = document.createElement('input');
-      chk.type = 'checkbox';
-      chk.id = `task-${idx}`;
-      chk.checked = state[idx] || false;
-      chk.addEventListener('change', () => {
-        state[idx] = chk.checked;
-        localStorage.setItem(storageKey, JSON.stringify(state));
-      });
-
-      const lbl = document.createElement('label');
-      lbl.htmlFor = chk.id;
-      lbl.textContent = task;
-
-      li.append(chk, lbl);
-      listEl.appendChild(li);
-    });
-
-    // If no routine defined for today
-    if (!routines[today]) {
-      listEl.innerHTML = "<li>No workout scheduled for today. Enjoy your rest!</li>";
+  // --- 3. Render Calendar Strip ---
+  const calCont = document.getElementById('calendar');
+  let selectedDayKey;
+  function renderCalendar() {
+    const today = new Date();
+    const days = [];
+    for(let offset=-3; offset<=+3; offset++){
+      let d = new Date(today);
+      d.setDate(today.getDate()+offset);
+      days.push(formatDay(d));
     }
+    calCont.innerHTML = '';
+    days.forEach(d=>{
+      let div = document.createElement('div');
+      div.className = 'day';
+      div.dataset.key = d.key;
+      div.innerHTML = `<span class="weekday">${d.weekday}</span>
+                       <span class="date">${d.date}</span>`;
+      div.addEventListener('click', ()=>selectDay(d.key));
+      calCont.append(div);
+      // auto-select today
+      if (d.key === formatDay(today).key) selectDay(d.key);
+    });
+  }
+
+  // --- 4. Render Tasks for a Given Day ---
+  const taskUL = document.getElementById('taskList');
+  const header = document.getElementById('header');
+  function selectDay(dayKey) {
+    selectedDayKey = dayKey;
+    // update calendar highlight
+    [...calCont.children].forEach(el=>
+      el.classList.toggle('selected', el.dataset.key===dayKey)
+    );
+    // get weekday name
+    let wd = new Date(dayKey).toLocaleDateString('en-US',{ weekday:'long' });
+    header.textContent = wd+"'s Exercises";
+    // load tasks & progress
+    let tasks = schedule[wd] || [];
+    let done = loadProgress(dayKey);
+    // separate and sort: undone first
+    let undone = tasks.filter((_,i)=>!done.includes(i));
+    let doneNow = tasks.filter((_,i)=> done.includes(i));
+    // render list
+    taskUL.innerHTML = '';
+    undone.concat(doneNow).forEach((task,i)=>{
+      // real index in original tasks array
+      let origIndex = tasks.indexOf(task);
+      let li = document.createElement('li');
+      if (done.includes(origIndex)) li.classList.add('done');
+      li.innerHTML = `<input type="checkbox" ${done.includes(origIndex)?'checked':''} data-idx="${origIndex}">
+                      <label>${task}</label>`;
+      li.querySelector('input').addEventListener('change', onCheck);
+      taskUL.append(li);
+    });
+  }
+
+  // --- 5. Handle Check/Uncheck & Persist ---
+  function onCheck(e) {
+    let idx = +e.target.dataset.idx;
+    let done = loadProgress(selectedDayKey);
+    if (e.target.checked){
+      done.push(idx);
+    } else {
+      done = done.filter(x=>x!==idx);
+    }
+    saveProgress(selectedDayKey, done);
+    // re-render this day
+    selectDay(selectedDayKey);
+  }
+
+  // --- 6. Initialize ---
+  renderCalendar();
   </script>
+
 </body>
 </html>
